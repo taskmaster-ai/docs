@@ -44,7 +44,8 @@
           {
             "group": "Best Practices",
             "pages": [
-              "docs/best-practices/index"
+              "docs/best-practices/index",
+              "docs/best-practices/configuration-advanced"
             ]
           },
           {
