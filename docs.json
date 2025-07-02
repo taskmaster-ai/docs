@@ -11,24 +11,47 @@
   "navigation": {
     "tabs": [
       {
-        "tab": "Guide",
+        "tab": "Task Master Documentation",
         "groups": [
           {
-            "group": "Get Started",
+            "group": "Welcome",
             "pages": [
-              "docs/Installation",
-              "docs/cursor-setup",
-              "docs/configuration",
-              "docs/ai-development-workflow"
+              "docs/introduction",
+              "docs/whats-new"
             ]
           },
           {
-            "group": "Essentials",
+            "group": "Getting Started",
             "pages": [
-              "docs/task-structure",
-              "docs/examples",
-              "docs/command-reference",
-              "docs/ai-client-utils-example"
+              {
+                "group": "Quick Start",
+                "pages": [
+                  "docs/getting-started/quick-start/quick-start",
+                  "docs/getting-started/quick-start/requirements",
+                  "docs/getting-started/quick-start/installation",
+                  "docs/getting-started/quick-start/configuration-quick",
+                  "docs/getting-started/quick-start/prd-quick",
+                  "docs/getting-started/quick-start/tasks-quick",
+                  "docs/getting-started/quick-start/execute-quick",
+                  "docs/getting-started/quick-start/rules-quick",
+                  "docs/getting-started/quick-start/moving-forward"
+                ]
+              },
+              "docs/getting-started/faq",
+              "docs/getting-started/contribute"
+            ]
+          },
+          {
+            "group": "Best Practices",
+            "pages": [
+              "docs/best-practices/index"
+            ]
+          },
+          {
+            "group": "Technical Capabilities",
+            "pages": [
+              "docs/capabilities/index",
+              "docs/capabilities/cli-root-commands"
             ]
           }
         ]
