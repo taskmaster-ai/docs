@@ -15,4 +15,4 @@ Task Master is licensed under the MIT License with Commons Clause. This means yo
 - Offer Task Master as a hosted service
 - Create competing products based on Task Master
 
-See the [LICENSE](../LICENSE) file for the complete license text.
+<!-- See the [LICENSE](../LICENSE) file for the complete license text. -->
