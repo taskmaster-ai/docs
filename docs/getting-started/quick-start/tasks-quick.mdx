@@ -17,18 +17,25 @@ The agent will execute
 ```bash
 task-master expand --all
 ```
-## Show Tasks
+## List/Show Tasks
 
 Used to view task details. It is important to review the plan and ensure it makes sense in your project. Check for correct folder structures, dependencies, out of scope subtasks, etc.
+
+To see a list of tasks and descriptions use the following command:
+
 ```
-Show me all pending tasks so I can review.
+List all pending tasks so I can review.
 ```
 To see all tasks in the CLI you can use:
 ```bash
 task-master list
 ```
 
-To see an individual task you can use:
+To see all implementation details of an individual task, including subtasks and testing strategy, you can use Show Task:
+
+```
+Show task 2 so I can review.
+```
 
 ```bash
 task-master show --id=<##>
@@ -54,8 +61,7 @@ Task Master can provide a complexity report which can be helpful to read before 
 Can you analyze the complexity of our tasks to help me understand which ones need to be broken down further?
 ```
 
-### Viewing complexity report
-
+You can view the report in a friendly table using:
 ```
 Can you show me the complexity report in a more readable format?
 ```
