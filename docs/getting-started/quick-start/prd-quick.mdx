@@ -12,7 +12,7 @@ You don’t need to define your whole app up front. You can write a focused PRD 
 </Tip>
 
 <Tip>
-You can start with a blank template or you can start with a PRD on an existing project.
+You can start with an empty project or you can start with a feature PRD on an existing project.
 </Tip>
 
 <Tip>
@@ -30,12 +30,15 @@ The more context you give the model, the better the breakdown and results.
 
 ---
 
-## Recommended Workflow
+## Writing a PRD for Task Master
 
-You can co-write your PRD with a reasoning model (like Claude or GPT-4) using the following workflow:
+<Note>An example PRD can be found in .taskmaster/templates/example_prd.txt</Note>
+
+
+You can co-write your PRD with an LLM model using the following workflow:
 
 1. **Chat about requirements** — explain what you want to build.
-2. **Show an example PRD** — paste in the example PRD template found in .taskmaster/templates/example_prd.txt so the model understands the expected format.
+2. **Show an example PRD** — share the example PRD so the model understands the expected format. The example uses formatting that work well with Task Master's code. Following the example will yield better results.
 3. **Iterate and refine** — work with the model to shape the draft into a clear and well-structured PRD.
 
 This approach works great in Cursor, or anywhere you use a chat-based LLM.
@@ -49,8 +52,6 @@ Place your PRD file in the `.taskmaster/docs` folder in your project.
 - You can have **multiple PRDs** per project.
 - Name your PRDs clearly so they’re easy to reference later.
   - Examples: `dashboard_redesign.txt`, `user_onboarding.txt`
-
-PRD files are just plain text with Markdown-style formatting.
 
 ---
 
@@ -74,5 +75,7 @@ This will:
 
 - Parse your PRD document
 - Generate a structured `tasks.json` file with tasks, dependencies, priorities, and test strategies
+
+Now that you have written and parsed a PRD, you are ready to start setting up your tasks.
 
 
