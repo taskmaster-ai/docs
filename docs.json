@@ -16,8 +16,7 @@
           {
             "group": "Welcome",
             "pages": [
-              "docs/introduction",
-              "docs/whats-new"
+              "docs/introduction"
             ]
           },
           {
@@ -32,9 +31,7 @@
                   "docs/getting-started/quick-start/configuration-quick",
                   "docs/getting-started/quick-start/prd-quick",
                   "docs/getting-started/quick-start/tasks-quick",
-                  "docs/getting-started/quick-start/execute-quick",
-                  "docs/getting-started/quick-start/rules-quick",
-                  "docs/getting-started/quick-start/moving-forward"
+                  "docs/getting-started/quick-start/execute-quick"
                 ]
               },
               "docs/getting-started/faq",
@@ -52,8 +49,9 @@
           {
             "group": "Technical Capabilities",
             "pages": [
-              "docs/capabilities/index",
-              "docs/capabilities/cli-root-commands"
+              "docs/capabilities/mcp",
+              "docs/capabilities/cli-root-commands",
+              "docs/capabilities/task-structure"
             ]
           }
         ]
