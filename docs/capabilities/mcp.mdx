@@ -3,66 +3,870 @@ title: MCP Tools
 sidebarTitle: "MCP Tools"
 ---
 
-# MCP Tools
+## Table of Contents
 
-This document provides an overview of the MCP (Machine-to-Machine Communication Protocol) interface for the Task Master application. The MCP interface is defined in the `mcp-server/` directory and exposes the application's core functionalities as a set of tools that can be called remotely.
+| Tool | Description |
+|------|-------------|
+| [parse_prd](#parse-prd) | Parse a PRD document and generate tasks |
+| [expand_all](#expand-all) | Expand all pending tasks into subtasks |
+| [expand_task](#expand-task) | Expand a single task into subtasks |
+| [add_dependency](#add-dependency) | Add a dependency relationship between two tasks |
+| [add_subtask](#add-subtask) | Add a subtask to an existing task |
+| [add_tag](#add-tag) | Create a new tag for organizing tasks |
+| [add_task](#add-task) | Add a new task using AI |
+| [analyze_project-complexity](#analyze_project_complexity) | Analyze task complexity and generate recommendations |
+| [clear_subtasks](#clear-subtasks) | Clear subtasks from specified tasks |
+| [complexity_report](#complexity-report) | Display the complexity analysis report |
+| [copy_tag](#copy-tag) | Copy an existing tag to a new tag |
+| [delete_tag](#delete-tag) | Delete an existing tag and all its tasks |
+| [fix_dependencies](#fix-dependencies) | Fix invalid dependencies in tasks automatically |
+| [get_task](#get-task) | Get detailed information about a specific task |
+| [get_tasks](#get-tasks) | Get all tasks, optionally filtering by status |
+| [initialize_project](#initialize-project) | Initialize a new Task Master project |
+| [list_tags](#list-tags) | List all available tags with task counts and metadata |
+| [models](#models) | Get or set AI model configurations |
+| [move_task](#move-task) | Move a task or subtask to a new position |
+| [next_task](#next-task) | Find the next task to work on based on dependencies and status |
+| [remove_dependency](#remove-dependency) | Remove a dependency from a task |
+| [remove-subtask](#remove-subtask) | Remove a subtask from its parent task |
+| [remove-task](#remove-task) | Remove a task or subtask permanently from the tasks list |
+| [rename-tag](#rename-tag) | Rename an existing tag |
+| [research](#research) | Perform AI-powered research queries with project context |
+| [response-language](#response-language) | Get or set the response language for the project |
+| [rules](#rules) | Add or remove rule profiles from the project |
+| [set-task-status](#set-task-status) | Set the status of one or more tasks or subtasks |
+| [update-subtask](#update-subtask) | Append additional information to a specific subtask |
+| [update-task](#update-task) | Update a single task by ID with new information |
+| [update](#update) | Update multiple upcoming tasks based on new context or changes |
+| [use-tag](#use-tag) | Switch to a different tag context for task operations |
+| [validate-dependencies](#validate-dependencies) | Check tasks for dependency issues without making changes |
+| [get-operation-status](#get-operation-status) | Retrieves the status and result/error of a background operation |
 
-## Core Concepts
+<Note>Many MCP tools reference `projectRoot` as a required parameter. This is automatically determined by the agent and is included in the documentation for debugging purposes only.</Note>
 
-The MCP interface is built on top of the `fastmcp` library and registers a set of tools that correspond to the core functionalities of the Task Master application. These tools are defined in the `mcp-server/src/tools/` directory and are registered with the MCP server in `mcp-server/src/tools/index.js`.
+## parse_prd
 
-Each tool is defined with a name, a description, and a set of parameters that are validated using the `zod` library. The `execute` function of each tool calls the corresponding core logic function from `scripts/modules/task-manager.js`.
+**Description:**
+Parse a Product Requirements Document (PRD) text file to automatically generate initial tasks. Reinitializing the project is not necessary to run this tool. It is recommended to run parse-prd after initializing the project and creating/importing a prd.txt file in the project root's .taskmaster/docs directory.
 
-## Tool Categories
+**Required Parameters**
+| Name         | Type     | Description                                  |
+|--------------|----------|----------------------------------------------|
+| projectRoot  | string   | The directory of the project. Must be an absolute path. |
 
-The MCP tools can be categorized in the same way as the core functionalities:
+**Optional Parameters**
+| Name         | Type     | Description                                  | Default      |
+|--------------|----------|----------------------------------------------|--------------|
+| input        | string   | Absolute path to the PRD document file (.txt, .md, etc.) | .taskmaster/docs/PRD.md |
+| tag          | string   | Tag context to operate on                    |              |
+| output       | string   | Output path for tasks.json file              | .taskmaster/tasks/tasks.json |
+| numTasks     | string   | Approximate number of top-level tasks to generate (default: 10). Setting to 0 lets Taskmaster determine the number. Avoid numbers above 50. |              |
+| force        | boolean  | Overwrite existing output file without prompting. | false        |
+| research     | boolean  | Enable Taskmaster to use the research role for more informed task generation. Requires appropriate API key. |              |
+| append       | boolean  | Append generated tasks to existing file.     |              |
 
-### 1. Task and Subtask Management
+**Example**
+```console
+Parse my PRD in /path/to/PRD.txt into 15 tasks with the tag API. Research best practices beforehand.
+```
 
--   **`add_task`**: Creates a new task.
--   **`add_subtask`**: Adds a subtask to a parent task.
--   **`remove_task`**: Removes one or more tasks or subtasks.
--   **`remove_subtask`**: Removes a subtask from its parent.
--   **`update_task`**: Updates a single task.
--   **`update_subtask`**: Appends information to a subtask.
--   **`update`**: Updates multiple tasks.
--   **`move_task`**: Moves a task or subtask.
--   **`clear_subtasks`**: Clears all subtasks from one or more tasks.
+## expand_all
 
-### 2. Task Information and Status
+**Description:**
+Expand all pending tasks into subtasks based on complexity or defaults.
 
--   **`get_tasks`**: Lists all tasks.
--   **`get_task`**: Shows the details of a specific task.
--   **`next_task`**: Shows the next task to work on.
--   **`set_task_status`**: Sets the status of a task or subtask.
+**Required Parameters**
+| Name         | Type     | Description                                  |
+|--------------|----------|----------------------------------------------|
+| (none)       |          |                                              |
 
-### 3. Task Analysis and Expansion
+**Optional Parameters**
+| Name         | Type     | Description                                  | Default      |
+|--------------|----------|----------------------------------------------|--------------|
+| num          | string   | Target number of subtasks per task (uses complexity/defaults otherwise) |              |
+| research     | boolean  | Enable research-backed subtask generation (e.g., using Perplexity) |              |
+| prompt       | string   | Additional context to guide subtask generation for all tasks |              |
+| force        | boolean  | Force regeneration of subtasks for tasks that already have them |              |
+| file         | string   | Absolute path to the tasks file in the /tasks folder inside the project root (default: tasks/tasks.json) |              |
+| projectRoot  | string   | Absolute path to the project root directory (derived from session if possible) |              |
+| tag          | string   | Tag context to operate on                    |              |
 
--   **`parse_prd`**: Parses a PRD to generate tasks.
--   **`expand_task`**: Expands a task into subtasks.
--   **`expand_all`**: Expands all eligible tasks.
--   **`analyze_project_complexity`**: Analyzes task complexity.
--   **`complexity_report`**: Displays the complexity analysis report.
+**Example**
+```console
+Expand all tasks in my project and generate 5 subtasks for each, using research and the tag "backend".
+```
 
-### 4. Dependency Management
+## expand_task
 
--   **`add_dependency`**: Adds a dependency to a task.
--   **`remove_dependency`**: Removes a dependency from a task.
--   **`validate_dependencies`**: Validates the dependencies of all tasks.
--   **`fix_dependencies`**: Fixes any invalid dependencies.
+**Description:**
+Expand a task into subtasks for detailed implementation.
 
-### 5. Project and Configuration
+**Required Parameters**
+| Name         | Type     | Description                                  |
+|--------------|----------|----------------------------------------------|
+| id           | string   | ID of task to expand                         |
+| projectRoot  | string   | The directory of the project. Must be an absolute path. |
 
--   **`initialize_project`**: Initializes a new project.
--   **`generate`**: Generates individual task files.
--   **`models`**: Manages AI model configurations.
--   **`research`**: Performs AI-powered research.
+**Optional Parameters**
+| Name         | Type     | Description                                  | Default      |
+|--------------|----------|----------------------------------------------|--------------|
+| num          | string   | Number of subtasks to generate               |              |
+| research     | boolean  | Use research role for generation             | false        |
+| prompt       | string   | Additional context for subtask generation    |              |
+| file         | string   | Path to the tasks file relative to project root (e.g., tasks/tasks.json) |              |
+| force        | boolean  | Force expansion even if subtasks exist       | false        |
+| tag          | string   | Tag context to operate on                    |              |
 
-### 6. Tag Management
+**Example**
+```console
+Expand task 12 into 3 subtasks with extra context about API security. Use research and force regeneration.
+```
 
--   **`add_tag`**: Creates a new tag.
--   **`delete_tag`**: Deletes a tag.
--   **`list_tags`**: Lists all tags.
--   **`use_tag`**: Switches to a different tag.
--   **`rename_tag`**: Renames a tag.
--   **`copy_tag`**: Copies a tag.
+## add_dependency
+
+**Description:**
+Add a dependency relationship between two tasks.
+
+**Required Parameters**
+| Name         | Type     | Description                                  |
+|--------------|----------|----------------------------------------------|
+| id           | string   | ID of task that will depend on another task  |
+| dependsOn    | string   | ID of task that will become a dependency     |
+| projectRoot  | string   | The directory of the project. Must be an absolute path. |
+
+**Optional Parameters**
+| Name         | Type     | Description                                  | Default      |
+|--------------|----------|----------------------------------------------|--------------|
+| file         | string   | Absolute path to the tasks file (default: tasks/tasks.json) |              |
+| tag          | string   | Tag context to operate on                    |              |
+
+**Example**
+```console
+Make task 7 depend on task 3 in my project with the tag "frontend".
+```
+
+## add_subtask
+
+**Description:**
+Add a subtask to an existing task.
+
+**Required Parameters**
+| Name         | Type     | Description                                  |
+|--------------|----------|----------------------------------------------|
+| id           | string   | Parent task ID (required)                    |
+| projectRoot  | string   | The directory of the project. Must be an absolute path. |
+
+**Optional Parameters**
+| Name         | Type     | Description                                  | Default      |
+|--------------|----------|----------------------------------------------|--------------|
+| taskId       | string   | Existing task ID to convert to subtask        |              |
+| title        | string   | Title for the new subtask (when creating a new subtask) |              |
+| description  | string   | Description for the new subtask               |              |
+| details      | string   | Implementation details for the new subtask    |              |
+| status       | string   | Status for the new subtask (default: 'pending') |              |
+| dependencies | string   | Comma-separated list of dependency IDs for the new subtask |              |
+| file         | string   | Absolute path to the tasks file (default: tasks/tasks.json) |              |
+| skipGenerate | boolean  | Skip regenerating task files                  |              |
+| tag          | string   | Tag context to operate on                     |              |
+
+**Example**
+```console
+Add a subtask "Write API docs" to task 5 with status in-progress and dependency on 3.2.
+```
+
+## add_tag
+
+**Description:**
+Create a new tag for organizing tasks in different contexts.
+
+**Required Parameters**
+| Name         | Type     | Description                                  |
+|--------------|----------|----------------------------------------------|
+| name         | string   | Name of the new tag to create                |
+| projectRoot  | string   | The directory of the project. Must be an absolute path. |
+
+**Optional Parameters**
+| Name             | Type     | Description                                  | Default      |
+|------------------|----------|----------------------------------------------|--------------|
+| copyFromCurrent  | boolean  | Whether to copy tasks from the current tag (default: false) |              |
+| copyFromTag      | string   | Specific tag to copy tasks from              |              |
+| fromBranch       | boolean  | Create tag name from current git branch (ignores name parameter) |              |
+| description      | string   | Optional description for the tag             |              |
+| file             | string   | Path to the tasks file (default: tasks/tasks.json) |              |
+
+**Example**
+```console
+Create a new tag "feature-x" and copy tasks from the current tag.
+```
+
+## add_task
+
+**Description:**
+Add a new task using AI.
+
+**Required Parameters**
+| Name         | Type     | Description                                  |
+|--------------|----------|----------------------------------------------|
+| projectRoot  | string   | The directory of the project. Must be an absolute path. |
+
+**Optional Parameters**
+| Name         | Type     | Description                                  | Default      |
+|--------------|----------|----------------------------------------------|--------------|
+| prompt       | string   | Description of the task to add (required if not using manual fields) |              |
+| title        | string   | Task title (for manual task creation)         |              |
+| description  | string   | Task description (for manual task creation)   |              |
+| details      | string   | Implementation details (for manual task creation) |              |
+| testStrategy | string   | Test strategy (for manual task creation)      |              |
+| dependencies | string   | Comma-separated list of task IDs this task depends on |              |
+| priority     | string   | Task priority (high, medium, low)             |              |
+| file         | string   | Path to the tasks file (default: tasks/tasks.json) |              |
+| tag          | string   | Tag context to operate on                     |              |
+| research     | boolean  | Whether to use research capabilities for task creation |              |
+
+**Example**
+```console
+Add a new high-priority task "Implement OAuth login" that depends on tasks 2 and 3, with research enabled.
+```
+
+## analyze_project_complexity
+
+**Description:**
+Analyze task complexity and generate expansion recommendations.
+
+**Required Parameters**
+| Name         | Type     | Description                                  |
+|--------------|----------|----------------------------------------------|
+| projectRoot  | string   | The directory of the project. Must be an absolute path. |
+
+**Optional Parameters**
+| Name         | Type     | Description                                  | Default      |
+|--------------|----------|----------------------------------------------|--------------|
+| threshold    | number   | Complexity score threshold (1-10) to recommend expansion. | 5            |
+| research     | boolean  | Use Perplexity AI for research-backed analysis. | false        |
+| output       | string   | Output file path relative to project root (default: .taskmaster/complexity-report.json). |              |
+| file         | string   | Path to the tasks file relative to project root (default: tasks/tasks.json). |              |
+| ids          | string   | Comma-separated list of task IDs to analyze specifically (e.g., "1,3,5"). |              |
+| from         | number   | Starting task ID in a range to analyze.      |              |
+| to           | number   | Ending task ID in a range to analyze.        |              |
+| tag          | string   | Tag context to operate on                    |              |
+
+**Example**
+```console
+Analyze my project for complex tasks and save the report to /reports/complexity.json, using a threshold of 7 and research.
+```
+
+## clear_subtasks
+
+**Description:**
+Clear subtasks from specified tasks.
+
+**Required Parameters**
+| Name         | Type     | Description                                  |
+|--------------|----------|----------------------------------------------|
+| projectRoot  | string   | The directory of the project. Must be an absolute path. |
+| (one of)     |          | Either 'id' (task IDs, comma-separated) or 'all' (boolean) must be provided |
+
+**Optional Parameters**
+| Name         | Type     | Description                                  | Default      |
+|--------------|----------|----------------------------------------------|--------------|
+| id           | string   | Task IDs (comma-separated) to clear subtasks from |              |
+| all          | boolean  | Clear subtasks from all tasks                |              |
+| file         | string   | Absolute path to the tasks file (default: tasks/tasks.json) |              |
+| tag          | string   | Tag context to operate on                    |              |
+
+**Example**
+```console
+Clear all subtasks from every task in my project.
+```
+
+## complexity_report
+
+**Description:**
+Display the complexity analysis report in a readable format.
+
+**Required Parameters**
+| Name         | Type     | Description                                  |
+|--------------|----------|----------------------------------------------|
+| projectRoot  | string   | The directory of the project. Must be an absolute path. |
+
+**Optional Parameters**
+| Name         | Type     | Description                                  | Default      |
+|--------------|----------|----------------------------------------------|--------------|
+| file         | string   | Path to the report file (default: .taskmaster/complexity-report.json) |              |
+
+**Example**
+```console
+Show me the complexity analysis report for my project.
+```
+
+## copy_tag
+
+**Description:**
+Copy an existing tag to create a new tag with all tasks and metadata.
+
+**Required Parameters**
+| Name         | Type     | Description                                  |
+|--------------|----------|----------------------------------------------|
+| sourceName   | string   | Name of the source tag to copy from          |
+| targetName   | string   | Name of the new tag to create                |
+| projectRoot  | string   | The directory of the project. Must be an absolute path. |
+
+**Optional Parameters**
+| Name         | Type     | Description                                  | Default      |
+|--------------|----------|----------------------------------------------|--------------|
+| description  | string   | Optional description for the new tag          |              |
+| file         | string   | Path to the tasks file (default: tasks/tasks.json) |              |
+
+**Example**
+```console
+Copy the tag "release-v1" to a new tag "release-v2" with a description "For next release".
+```
+
+## delete_tag
+
+**Description:**
+Delete an existing tag and all its tasks.
+
+**Required Parameters**
+| Name         | Type     | Description                                  |
+|--------------|----------|----------------------------------------------|
+| name         | string   | Name of the tag to delete                    |
+| projectRoot  | string   | The directory of the project. Must be an absolute path. |
+
+**Optional Parameters**
+| Name         | Type     | Description                                  | Default      |
+|--------------|----------|----------------------------------------------|--------------|
+| yes          | boolean  | Skip confirmation prompts (default: true for MCP) |              |
+| file         | string   | Path to the tasks file (default: tasks/tasks.json) |              |
+
+**Example**
+```console
+Delete the tag "feature-x".
+```
+
+## fix_dependencies
+
+**Description:**
+Fix invalid dependencies in tasks automatically.
+
+**Required Parameters**
+| Name         | Type     | Description                                  |
+|--------------|----------|----------------------------------------------|
+| projectRoot  | string   | The directory of the project. Must be an absolute path. |
+
+**Optional Parameters**
+| Name         | Type     | Description                                  | Default      |
+|--------------|----------|----------------------------------------------|--------------|
+| file         | string   | Absolute path to the tasks file               |              |
+| tag          | string   | Tag context to operate on                    |              |
+
+**Example**
+```console
+Fix all invalid dependencies in my project for the tag "backend".
+```
+
+## get_task
+
+**Description:**
+Get detailed information about a specific task.
+
+**Required Parameters**
+| Name         | Type     | Description                                  |
+|--------------|----------|----------------------------------------------|
+| id           | string   | Task ID(s) to get (can be comma-separated for multiple tasks) |
+| projectRoot  | string   | Absolute path to the project root directory (Optional, usually from session) |
+
+**Optional Parameters**
+| Name         | Type     | Description                                  | Default      |
+|--------------|----------|----------------------------------------------|--------------|
+| status       | string   | Filter subtasks by status (e.g., 'pending', 'done') |              |
+| file         | string   | Path to the tasks file relative to project root |              |
+| complexityReport | string | Path to the complexity report file (relative to project root or absolute) |              |
+| tag          | string   | Tag context to operate on                    |              |
+
+**Example**
+```console
+Show me details for task 8, including only pending subtasks.
+```
+
+## get_tasks
+
+**Description:**
+Get all tasks from Task Master, optionally filtering by status and including subtasks.
+
+**Required Parameters**
+| Name         | Type     | Description                                  |
+|--------------|----------|----------------------------------------------|
+| projectRoot  | string   | The directory of the project. Must be an absolute path. |
+
+**Optional Parameters**
+| Name         | Type     | Description                                  | Default      |
+|--------------|----------|----------------------------------------------|--------------|
+| status       | string   | Filter tasks by status (e.g., 'pending', 'done') or multiple statuses separated by commas (e.g., 'blocked,deferred') |              |
+| withSubtasks | boolean  | Include subtasks nested within their parent tasks in the response |              |
+| file         | string   | Path to the tasks file (relative to project root or absolute) |              |
+| complexityReport | string | Path to the complexity report file (relative to project root or absolute) |              |
+| tag          | string   | Tag context to operate on                    |              |
+
+**Example**
+```console
+List all done tasks in my project, including their subtasks.
+```
+
+## initialize_project
+
+**Description:**
+Initialize a new Task Master project structure, creating necessary folders and configuration files in the current directory.
+
+**Required Parameters**
+| Name         | Type     | Description                                  |
+|--------------|----------|----------------------------------------------|
+| projectRoot  | string   | The root directory for the project. |
+
+**Optional Parameters**
+| Name         | Type     | Description                                  | Default      |
+|--------------|----------|----------------------------------------------|--------------|
+| skipInstall  | boolean  | Skip installing dependencies automatically    | false        |
+| addAliases   | boolean  | Add shell aliases (tm, taskmaster) to shell config file | true         |
+| initGit      | boolean  | Initialize Git repository in project root     | true         |
+| storeTasksInGit | boolean | Store tasks in Git (tasks.json and tasks/ directory) | true         |
+| yes          | boolean  | Skip prompts and use default values           | true         |
+| rules        | array    | List of rule profiles to include at initialization |              |
+
+**Example**
+```console
+Initialize a new Task Master project in /projects/my-app with all default settings.
+```
+
+## list_tags
+
+**Description:**
+List all available tags with task counts and metadata.
+
+**Required Parameters**
+| Name        | Type   | Description                                  |
+|-------------|--------|----------------------------------------------|
+| projectRoot | string | The directory of the project. Must be an absolute path. |
+
+**Optional Parameters**
+| Name         | Type    | Description                                         | Default |
+|--------------|---------|-----------------------------------------------------|---------|
+| showMetadata | boolean | Whether to include metadata in the output           | false   |
+| file         | string  | Path to the tasks file (default: tasks/tasks.json)  |         |
+
+**Example**
+```console
+List all tags in my project and show metadata.
+```
+
+## models
+
+**Description:**
+Get information about available AI models or set model configurations. Run without arguments to get the current model configuration and API key status for the selected model providers.
+
+**Required Parameters**
+| Name        | Type   | Description                                  |
+|-------------|--------|----------------------------------------------|
+| projectRoot | string | The directory of the project. Must be an absolute path. |
+
+**Optional Parameters**
+| Name                | Type    | Description                                                                 | Default |
+|---------------------|---------|-----------------------------------------------------------------------------|---------|
+| setMain             | string  | Set the primary model for task generation/updates.                          |         |
+| setResearch         | string  | Set the model for research-backed operations.                               |         |
+| setFallback         | string  | Set the model to use if the primary fails.                                  |         |
+| listAvailableModels | boolean | List all available models not currently in use.                             |         |
+| openrouter          | boolean | Indicates the set model ID is a custom OpenRouter model.                    |         |
+| ollama              | boolean | Indicates the set model ID is a custom Ollama model.                        |         |
+| bedrock             | boolean | Indicates the set model ID is a custom AWS Bedrock model.                   |         |
+| azure               | boolean | Indicates the set model ID is a custom Azure OpenAI model.                  |         |
+| vertex              | boolean | Indicates the set model ID is a custom Google Vertex AI model.              |         |
+
+**Example**
+```console
+Show me all available AI models and set the main model to gpt-4o.
+```
+
+## move_task
+
+**Description:**
+Move a task or subtask to a new position.
+
+**Required Parameters**
+| Name        | Type   | Description                                                                 |
+|-------------|--------|-----------------------------------------------------------------------------|
+| from        | string | ID of the task/subtask to move (e.g., "5" or "5.2"). Can be comma-separated to move multiple tasks (e.g., "5,6,7") |
+| to          | string | ID of the destination (e.g., "7" or "7.3"). Must match the number of source IDs if comma-separated |
+| projectRoot | string | Root directory of the project (typically derived from session)               |
+
+**Optional Parameters**
+| Name  | Type   | Description                                         | Default |
+|-------|--------|-----------------------------------------------------|---------|
+| file  | string | Custom path to tasks.json file                      |         |
+| tag   | string | Tag context to operate on                           |         |
+
+**Example**
+```console
+Move tasks 2,3,4 to positions 5,6,7 in my project with the tag "frontend".
+```
+
+## next_task
+
+**Description:**
+Find the next task to work on based on dependencies and status.
+
+**Required Parameters**
+| Name        | Type   | Description                                  |
+|-------------|--------|----------------------------------------------|
+| projectRoot | string | The directory of the project. Must be an absolute path. |
+
+**Optional Parameters**
+| Name            | Type   | Description                                         | Default |
+|-----------------|--------|-----------------------------------------------------|---------|
+| file            | string | Absolute path to the tasks file                     |         |
+| complexityReport| string | Path to the complexity report file (relative to project root or absolute) |         |
+| tag             | string | Tag context to operate on                           |         |
+
+**Example**
+```console
+What is the next task I should work on for the "backend" tag?
+```
+
+## remove_dependency
+
+**Description:**  
+Remove a dependency from a task. This tool allows you to specify a task and remove one of its dependencies, updating the task's dependency list accordingly.
+
+**Required Parameters**
+
+| Name       | Type   | Description                                 |
+|------------|--------|---------------------------------------------|
+| id         | string | Task ID to remove dependency from           |
+| dependsOn  | string | Task ID to remove as a dependency           |
+| projectRoot| string | The directory of the project. Must be an absolute path. |
+
+**Optional Parameters**
+
+| Name  | Type   | Description                                              | Default                    |
+|-------|--------|----------------------------------------------------------|----------------------------|
+| file  | string | Absolute path to the tasks file                          | tasks/tasks.json           |
+| tag   | string | Tag context to operate on                                |                            |
+
+**Example**
+```console
+Remove the dependency on task 3 from task 7 in my project.
+```
+
+## remove-subtask
+
+**Description:**  
+Remove a subtask from its parent task. You can optionally convert the subtask to a standalone task instead of deleting it.
+
+**Required Parameters**
+
+| Name        | Type   | Description                                                        |
+|-------------|--------|--------------------------------------------------------------------|
+| id          | string | Subtask ID to remove in format 'parentId.subtaskId' (required)     |
+| projectRoot | string | The directory of the project. Must be an absolute path.            |
+
+**Optional Parameters**
+
+| Name         | Type    | Description                                                        | Default            |
+|--------------|---------|--------------------------------------------------------------------|--------------------|
+| convert      | boolean | Convert the subtask to a standalone task instead of deleting it    |                    |
+| file         | string  | Absolute path to the tasks file                                   | tasks/tasks.json   |
+| skipGenerate | boolean | Skip regenerating task files                                       |                    |
+| tag          | string  | Tag context to operate on                                          |                    |
+
+**Example**
+```console
+Remove subtask 5.2 from its parent, but convert it to a standalone task instead of deleting.
+```
+
+## remove-task
+
+**Description:**  
+Remove a task or subtask permanently from the tasks list. You can remove multiple tasks/subtasks at once by providing a comma-separated list.
+
+**Required Parameters**
+
+| Name        | Type   | Description                                                                 |
+|-------------|--------|-----------------------------------------------------------------------------|
+| id          | string | ID of the task or subtask to remove (e.g., '5' or '5.2'). Can be comma-separated to update multiple tasks/subtasks at once. |
+| projectRoot | string | The directory of the project. Must be an absolute path.                     |
+
+**Optional Parameters**
+
+| Name    | Type    | Description                                                                 | Default |
+|---------|---------|-----------------------------------------------------------------------------|---------|
+| file    | string  | Absolute path to the tasks file                                             | tasks/tasks.json |
+| confirm | boolean | Whether to skip confirmation prompt                                         | false   |
+| tag     | string  | Specify which tag context to operate on. Defaults to the current active tag |         |
+
+**Example**
+```console
+Remove tasks 4, 5.2, and 7 from my project without confirmation.
+```
+
+## rename-tag
+
+**Description:**  
+Rename an existing tag.
+
+**Required Parameters**
+
+| Name        | Type   | Description                        |
+|-------------|--------|------------------------------------|
+| oldName     | string | Current name of the tag to rename  |
+| newName     | string | New name for the tag               |
+| projectRoot | string | The directory of the project. Must be an absolute path. |
+
+**Optional Parameters**
+
+| Name | Type   | Description                                      | Default          |
+|------|--------|--------------------------------------------------|------------------|
+| file | string | Path to the tasks file                           | tasks/tasks.json |
+
+**Example**
+```console
+Rename the tag "backend" to "api-backend" in my project.
+```
+
+## research
+
+**Description:**  
+Perform AI-powered research queries with project context. You can specify tasks, files, or custom context to guide the research, and optionally save results to a task or file.
+
+**Required Parameters**
+
+| Name        | Type   | Description                                  |
+|-------------|--------|----------------------------------------------|
+| query       | string | Research query/prompt (required)             |
+| projectRoot | string | The directory of the project. Must be an absolute path. |
+
+**Optional Parameters**
+
+| Name              | Type    | Description                                                                 | Default   |
+|-------------------|---------|-----------------------------------------------------------------------------|-----------|
+| taskIds           | string  | Comma-separated list of task/subtask IDs for context (e.g., "15,16.2,17")   |           |
+| filePaths         | string  | Comma-separated list of file paths for context (e.g., "src/api.js,docs/readme.md") |           |
+| customContext     | string  | Additional custom context text to include in the research                    |           |
+| includeProjectTree| boolean | Include project file tree structure in context                               | false     |
+| detailLevel       | string  | Detail level for the research response ("low", "medium", "high")             | medium    |
+| saveTo            | string  | Automatically save research results to specified task/subtask ID              |           |
+| saveToFile        | boolean | Save research results to .taskmaster/docs/research/ directory                 | false     |
+| tag               | string  | Tag context to operate on                                                    |           |
+
+**Example**
+```console
+Research best practices for REST API error handling and save the results to task 12. Include the project file tree for context.
+```
+
+## response-language
+
+**Description:**  
+Get or set the response language for the project.
+
+**Required Parameters**
+
+| Name        | Type   | Description                                                                 |
+|-------------|--------|-----------------------------------------------------------------------------|
+| projectRoot | string | The root directory for the project. ALWAYS SET THIS TO THE PROJECT ROOT DIRECTORY. IF NOT SET, THE TOOL WILL NOT WORK. |
+| language    | string | The new response language to set. like "中文" "English" or "español".        |
+
+**Example**
+```console
+Set the response language for my project to Spanish.
+```
+
+## rules
+
+**Description:**  
+Add or remove rule profiles from the project.
+
+**Required Parameters**
+
+| Name        | Type   | Description                                                        |
+|-------------|--------|--------------------------------------------------------------------|
+| action      | string | Whether to add or remove rule profiles.                            |
+| profiles    | array  | List of rule profiles to add or remove (e.g., ["cursor", "roo"]). Available options: cursor, roo, etc. |
+| projectRoot | string | The root directory of the project. Must be an absolute path.       |
+
+**Optional Parameters**
+
+| Name | Type    | Description                                                                 | Default |
+|------|---------|-----------------------------------------------------------------------------|---------|
+| force| boolean | DANGEROUS: Force removal even if it would leave no rule profiles. Only use if you are absolutely certain. | false   |
+
+**Example**
+```console
+Add the cursor and roo rule profiles to my project.
+```
+
+## set-task-status
+
+**Description:**  
+Set the status of one or more tasks or subtasks.
+
+**Required Parameters**
+
+| Name        | Type   | Description                                                                 |
+|-------------|--------|-----------------------------------------------------------------------------|
+| id          | string | Task ID or subtask ID (e.g., '15', '15.2'). Can be comma-separated to update multiple tasks/subtasks at once. |
+| status      | string | New status to set (e.g., 'pending', 'done', 'in-progress', 'review', 'deferred', 'cancelled'). |
+| projectRoot | string | The directory of the project. Must be an absolute path.                     |
+
+**Optional Parameters**
+
+| Name              | Type   | Description                                                                 | Default |
+|-------------------|--------|-----------------------------------------------------------------------------|---------|
+| file              | string | Absolute path to the tasks file                                             | tasks/tasks.json |
+| complexityReport  | string | Path to the complexity report file (relative to project root or absolute)   |         |
+| tag               | string | Optional tag context to operate on                                          |         |
+
+**Example**
+```console
+Set the status of tasks 5, 6.2, and 7 to "in-progress" in my project.
+```
+
+## update-subtask
+
+**Description:**  
+Appends timestamped information to a specific subtask without replacing existing content. If you just want to update the subtask status, use set_task_status instead.
+
+**Required Parameters**
+
+| Name        | Type   | Description                                                        |
+|-------------|--------|--------------------------------------------------------------------|
+| id          | string | ID of the subtask to update in format "parentId.subtaskId" (e.g., "5.2"). Parent ID is the ID of the task that contains the subtask. |
+| prompt      | string | Information to add to the subtask                                      |
+| projectRoot | string | The directory of the project. Must be an absolute path.            |
+
+**Optional Parameters**
+
+| Name     | Type    | Description                                                        | Default |
+|----------|---------|--------------------------------------------------------------------|---------|
+| research | boolean | Use Perplexity AI for research-backed updates                      |         |
+| file     | string  | Absolute path to the tasks file                                     | tasks/tasks.json |
+| tag      | string  | Tag context to operate on                                           |         |
+
+**Example**
+```console
+Update subtask 5.2 with new implementation details and use research for additional context.
+```
+
+## update-task
+
+**Description:**  
+Updates a single task by ID with new information or context provided in the prompt.
+
+**Required Parameters**
+
+| Name        | Type   | Description                                                        |
+|-------------|--------|--------------------------------------------------------------------|
+| id          | string | ID of the task (e.g., '15') to update. Subtasks are supported using the update-subtask tool. |
+| prompt      | string | New information or context to incorporate into the task            |
+| projectRoot | string | The directory of the project. Must be an absolute path.            |
+
+**Optional Parameters**
+
+| Name     | Type    | Description                                                        | Default |
+|----------|---------|--------------------------------------------------------------------|---------|
+| research | boolean | Use Perplexity AI for research-backed updates                      |         |
+| append   | boolean | Append timestamped information to task details instead of full update |         |
+| file     | string  | Absolute path to the tasks file                                     | tasks/tasks.json |
+| tag      | string  | Tag context to operate on                                           |         |
+
+**Example**
+```console
+Update task 12 with new requirements and append the changes instead of replacing the content.
+```
+
+## update
+
+**Description:**  
+Update multiple upcoming tasks (with ID >= 'from' ID) based on new context or changes provided in the prompt. Use 'update_task' instead for a single specific task or 'update_subtask' for subtasks.
+
+**Required Parameters**
+
+| Name        | Type   | Description                                                        |
+|-------------|--------|--------------------------------------------------------------------|
+| from        | string | Task ID from which to start updating (inclusive). IMPORTANT: This tool uses 'from', not 'id' |
+| prompt      | string | Explanation of changes or new context to apply                    |
+| projectRoot | string | The directory of the project. (Optional, usually from session)    |
+
+**Optional Parameters**
+
+| Name     | Type    | Description                                                        | Default |
+|----------|---------|--------------------------------------------------------------------|---------|
+| research | boolean | Use Perplexity AI for research-backed updates                      |         |
+| file     | string  | Path to the tasks file relative to project root                    | tasks/tasks.json |
+| tag      | string  | Tag context to operate on                                           |         |
+
+**Example**
+```console
+Update all tasks from ID 10 onwards with new API requirements and use research for additional context.
+```
+
+## use-tag
+
+**Description:**  
+Switch to a different tag context for task operations.
+
+**Required Parameters**
+
+| Name        | Type   | Description                        |
+|-------------|--------|------------------------------------|
+| name        | string | Name of the tag to switch to       |
+| projectRoot | string | The directory of the project. Must be an absolute path. |
+
+**Optional Parameters**
+
+| Name | Type   | Description                                      | Default          |
+|------|--------|--------------------------------------------------|------------------|
+| file | string | Path to the tasks file                           | tasks/tasks.json |
+
+**Example**
+```console
+Switch to the "frontend" tag context for my project.
+```
+
+## validate-dependencies
+
+**Description:**  
+Check tasks for dependency issues (like circular references or links to non-existent tasks) without making changes.
+
+**Required Parameters**
+
+| Name        | Type   | Description                                  |
+|-------------|--------|----------------------------------------------|
+| projectRoot | string | The directory of the project. Must be an absolute path. |
+
+**Optional Parameters**
+
+| Name | Type   | Description                                              | Default          |
+|------|--------|----------------------------------------------------------|------------------|
+| file | string | Absolute path to the tasks file                          | tasks/tasks.json |
+| tag  | string | Tag context to operate on                                |                  |
+
+**Example**
+```console
+Validate all dependencies in my project to check for circular references or broken links.
+```
+
+## get-operation-status
+
+**Description:**  
+Retrieves the status and result/error of a background operation.
+
+**Required Parameters**
+
+| Name        | Type   | Description                        |
+|-------------|--------|------------------------------------|
+| operationId | string | The ID of the operation to check.  |
+
+**Example**
+```console
+Check the status of background operation with ID "op_12345".
+```
+

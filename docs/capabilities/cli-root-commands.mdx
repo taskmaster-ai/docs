@@ -3,207 +3,1028 @@ title: CLI Commands
 sidebarTitle: "CLI Commands"
 ---
 
+## Table of Contents
 
-<AccordionGroup>
-  <Accordion title="Parse PRD">
-    ```bash
-    # Parse a PRD file and generate tasks
-    task-master parse-prd <prd-file.txt>
+| Command | Description |
+|---------|-------------|
+| [parse-prd](#task-master-parse-prd) | Parse a PRD file and generate tasks |
+| [update](#task-master-update) | Update multiple tasks with ID >= "from" |
+| [update-task](#task-master-update-task) | Update a single specific task by ID |
+| [update-subtask](#task-master-update-subtask) | Update a subtask by appending information |
+| [set-status](#task-master-set-status) | Set the status of a task |
+| [list](#task-master-list) | List all tasks |
+| [expand](#task-master-expand) | Expand a task into subtasks using AI |
+| [analyze-complexity](#task-master-analyze-complexity) | Analyze tasks and generate expansion recommendations |
+| [research](#task-master-research) | Perform AI-powered research queries |
+| [clear-subtasks](#task-master-clear-subtasks) | Clear subtasks from specified tasks |
+| [add-task](#task-master-add-task) | Add a new task using AI or manually |
+| [next](#task-master-next) | Show the next task to work on |
+| [show](#task-master-show) | Display detailed information about tasks |
+| [add-dependency](#task-master-add-dependency) | Add a dependency to a task |
+| [remove-dependency](#task-master-remove-dependency) | Remove a dependency from a task |
+| [validate-dependencies](#task-master-validate-dependencies) | Identify invalid dependencies without fixing them |
+| [fix-dependencies](#task-master-fix-dependencies) | Fix invalid dependencies automatically |
+| [complexity-report](#task-master-complexity-report) | Display the complexity analysis report |
+| [add-subtask](#task-master-add-subtask) | Add a subtask to an existing task |
+| [remove-subtask](#task-master-remove-subtask) | Remove a subtask from its parent task |
+| [remove-task](#task-master-remove-task) | Remove one or more tasks or subtasks permanently |
+| [init](#task-master-init) | Initialize a new project with Task Master structure |
+| [models](#task-master-models) | Manage AI model configurations |
+| [lang](#task-master-lang) | Manage response language settings |
+| [move](#task-master-move) | Move a task or subtask to a new position |
+| [rules](#task-master-rules) | Add or remove rules for one or more profiles |
+| [migrate](#task-master-migrate) | Migrate existing project to new .taskmaster structure |
+| [sync-readme](#task-master-sync-readme) | Sync the current task list to README.md |
+| [add-tag](#task-master-add-tag) | Create a new tag context for organizing tasks |
+| [delete-tag](#task-master-delete-tag) | Delete an existing tag and all its tasks |
+| [tags](#task-master-tags) | List all available tags with metadata |
+| [use-tag](#task-master-use-tag) | Switch to a different tag context |
+| [rename-tag](#task-master-rename-tag) | Rename an existing tag |
+| [copy-tag](#task-master-copy-tag) | Copy an existing tag to create a new tag |
 
-    # Limit the number of tasks generated
-    task-master parse-prd <prd-file.txt> --num-tasks=10
-    ```
-  </Accordion>
+## task-master parse-prd
 
-  <Accordion title="List Tasks">
-    ```bash
-    # List all tasks
-    task-master list
+Parses a PRD (Product Requirements Document) file and generates tasks for your project.
 
-    # List tasks with a specific status
-    task-master list --status=<status>
+This command can either overwrite the existing `tasks.json` file or append new tasks, depending on the flags used. It supports research-backed task generation using Perplexity AI for more comprehensive breakdowns.
 
-    # List tasks with subtasks
-    task-master list --with-subtasks
+**Usage**
+```bash
+task-master parse-prd <prd-file.txt> [options]
+```
 
-    # List tasks with a specific status and include subtasks
-    task-master list --status=<status> --with-subtasks
-    ```
-  </Accordion>
+**Flags**
+| Flag                        | Description                                                                                  | Default                                 |
+|-----------------------------|----------------------------------------------------------------------------------------------|-----------------------------------------|
+| `-i, --input <file>`        | Path to the PRD file (alternative to positional argument)                                    |                                         |
+| `-o, --output <file>`       | Output file path                                                                             | `.taskmaster/tasks/tasks.json`          |
+| `-n, --num-tasks <number>`  | Number of tasks to generate                                                                  | 10                                      |
+| `-f, --force`               | Skip confirmation when overwriting existing tasks                                             |                                         |
+| `--append`                  | Append new tasks to existing tasks.json instead of overwriting                               |                                         |
+| `-r, --research`            | Use Perplexity AI for research-backed task generation, providing more comprehensive results  |                                         |
+| `--tag <tag>`               | Specify tag context for task operations                                                      |                                         |
 
-  <Accordion title="Show Next Task">
-    ```bash
-    # Show the next task to work on based on dependencies and status
-    task-master next
-    ```
-  </Accordion>
+**Examples**
+```bash
+task-master parse-prd requirements.txt --num-tasks 15
+task-master parse-prd --input=requirements.txt
+task-master parse-prd --force
+task-master parse-prd requirements_v2.txt --append
+task-master parse-prd requirements.txt --research
+# Using a tag for context
+task-master parse-prd requirements.txt --tag=frontend
+```
 
-  <Accordion title="Show Specific Task">
-    ```bash
-    # Show details of a specific task
-    task-master show <id>
-    # or
-    task-master show --id=<id>
+> **Note:**  
+> - By default, this command looks for a PRD file at `.taskmaster/PRD.md`.
+> - If you specify `--input` or a positional argument, that file is used instead.
+> - Tasks are generated and either overwrite or append to `tasks.json` depending on the flags.
 
-    # View a specific subtask (e.g., subtask 2 of task 1)
-    task-master show 1.2
-    ```
-  </Accordion>
+## task-master update
 
-  <Accordion title="Update Tasks">
-    ```bash
-    # Update tasks from a specific ID and provide context
-    task-master update --from=<id> --prompt="<prompt>"
-    ```
-  </Accordion>
+Updates multiple tasks with ID greater than or equal to the specified `--from` value, based on new information or implementation changes.
 
-  <Accordion title="Update a Specific Task">
-    ```bash
-    # Update a single task by ID with new information
-    task-master update-task --id=<id> --prompt="<prompt>"
+**Usage**
+```bash
+task-master update --from=<id> --prompt="<your prompt>" [options]
+```
 
-    # Use research-backed updates with Perplexity AI
-    task-master update-task --id=<id> --prompt="<prompt>" --research
-    ```
-  </Accordion>
+**Flags**
+| Flag                        | Description                                                                                  | Default                                 |
+|-----------------------------|----------------------------------------------------------------------------------------------|-----------------------------------------|
+| `-f, --file <file>`         | Path to the tasks file                                                                       | `.taskmaster/tasks/tasks.json`          |
+| `--from <id>`               | Task ID to start updating from (tasks with ID >= this value will be updated)                 | 1                                       |
+| `-p, --prompt <text>`       | Prompt explaining the changes or new context (required)                                      |                                         |
+| `-r, --research`            | Use Perplexity AI for research-backed task updates                                           |                                         |
+| `--tag <tag>`               | Specify tag context for task operations                                                      |                                         |
 
-  <Accordion title="Update a Subtask">
-    ```bash
-    # Append additional information to a specific subtask
-    task-master update-subtask --id=<parentId.subtaskId> --prompt="<prompt>"
+**Examples**
+```bash
+task-master update --from=5 --prompt="Update all tasks from 5 onward with new requirements"
+task-master update --from=10 --prompt="Refactor for new API" --research
+task-master update --from=1 --prompt="Add security notes" --tag=frontend
+```
 
-    # Example: Add details about API rate limiting to subtask 2 of task 5
-    task-master update-subtask --id=5.2 --prompt="Add rate limiting of 100 requests per minute"
+> **Note:**
+> - The `--prompt` flag is required.
+> - Use `update-task` for updating a single specific task.
 
-    # Use research-backed updates with Perplexity AI
-    task-master update-subtask --id=<parentId.subtaskId> --prompt="<prompt>" --research
-    ```
+## task-master update-task
 
-    Unlike the `update-task` command which replaces task information, the `update-subtask` command _appends_ new information to the existing subtask details, marking it with a timestamp. This is useful for iteratively enhancing subtasks while preserving the original content.
-  </Accordion>
+Updates a single specific task by ID with new information. Use the `--id` flag to specify the task.
 
-  <Accordion title="Generate Task Files">
-    ```bash
-    # Generate individual task files from tasks.json
-    task-master generate
-    ```
-  </Accordion>
+**Usage**
+```bash
+task-master update-task --id=<id> --prompt="<your prompt>" [options]
+```
 
-  <Accordion title="Set Task Status">
-    ```bash
-    # Set status of a single task
-    task-master set-status --id=<id> --status=<status>
+**Flags**
+| Flag                        | Description                                                                                  | Default                                 |
+|-----------------------------|----------------------------------------------------------------------------------------------|-----------------------------------------|
+| `-f, --file <file>`         | Path to the tasks file                                                                       | `.taskmaster/tasks/tasks.json`          |
+| `-i, --id <id>`             | Task ID to update (required)                                                                 |                                         |
+| `-p, --prompt <text>`       | Prompt explaining the changes or new context (required)                                      |                                         |
+| `-r, --research`            | Use Perplexity AI for research-backed task updates                                           |                                         |
+| `--append`                  | Append timestamped information to task details instead of full update                        |                                         |
+| `--tag <tag>`               | Specify tag context for task operations                                                      |                                         |
 
-    # Set status for multiple tasks
-    task-master set-status --id=1,2,3 --status=<status>
+**Examples**
+```bash
+task-master update-task --id=23 --prompt="Update with new information"
+task-master update-task --id=7 --prompt="Add test coverage" --append
+task-master update-task --id=15 --prompt="Refactor for new API" --research --tag=frontend
+```
 
-    # Set status for subtasks
-    task-master set-status --id=1.1,1.2 --status=<status>
-    ```
+> **Note:**
+> - The `--id` and `--prompt` flags are required.
+> - Use `update` for updating multiple tasks at once.
 
-    When marking a task as "done", all of its subtasks will automatically be marked as "done" as well.
-  </Accordion>
+## task-master update-subtask
 
-  <Accordion title="Expand Tasks">
-    ```bash
-    # Expand a specific task with subtasks
-    task-master expand --id=<id> --num=<number>
+Updates a subtask by appending additional timestamped information. Use the `--id` flag in the format `parentId.subtaskId`.
 
-    # Expand with additional context
-    task-master expand --id=<id> --prompt="<context>"
+**Usage**
+```bash
+task-master update-subtask --id=<parentId.subtaskId> --prompt="<your prompt>" [options]
+```
 
-    # Expand all pending tasks
-    task-master expand --all
+**Flags**
+| Flag                        | Description                                                                                  | Default                                 |
+|-----------------------------|----------------------------------------------------------------------------------------------|-----------------------------------------|
+| `-f, --file <file>`         | Path to the tasks file                                                                       | `.taskmaster/tasks/tasks.json`          |
+| `-i, --id <id>`             | Subtask ID to update in format "parentId.subtaskId" (required)                               |                                         |
+| `-p, --prompt <text>`       | Prompt explaining what information to add (required)                                         |                                         |
+| `-r, --research`            | Use Perplexity AI for research-backed updates                                                |                                         |
+| `--tag <tag>`               | Specify tag context for task operations                                                      |                                         |
 
-    # Force regeneration of subtasks for tasks that already have them
-    task-master expand --all --force
+**Examples**
+```bash
+task-master update-subtask --id=5.2 --prompt="Add more details about the API endpoint"
+task-master update-subtask --id=3.1 --prompt="Clarify acceptance criteria" --research
+task-master update-subtask --id=7.4 --prompt="Add frontend notes" --tag=frontend
+```
 
-    # Research-backed subtask generation for a specific task
-    task-master expand --id=<id> --research
+> **Note:**
+> - The `--id` and `--prompt` flags are required.
+> - The subtask ID must be in the format `parentId.subtaskId` (e.g., `5.2`).
 
-    # Research-backed generation for all tasks
-    task-master expand --all --research
-    ```
-  </Accordion>
+## task-master set-status
 
-  <Accordion title="Clear Subtasks">
-    ```bash
-    # Clear subtasks from a specific task
-    task-master clear-subtasks --id=<id>
+Sets the status of a single task, multiple tasks, or subtasks.
 
-    # Clear subtasks from multiple tasks
-    task-master clear-subtasks --id=1,2,3
+**Usage**
+```bash
+task-master set-status --id=<id> --status=<status> [options]
+```
 
-    # Clear subtasks from all tasks
-    task-master clear-subtasks --all
-    ```
-  </Accordion>
+**Flags**
+| Flag                        | Description                                                                                  | Default                                 |
+|-----------------------------|----------------------------------------------------------------------------------------------|-----------------------------------------|
+| `-i, --id <id>`             | Task ID (can be comma-separated for multiple tasks)                                          |                                         |
+| `-s, --status <status>`     | New status (e.g., pending, in-progress, done, etc.)                                         |                                         |
+| `-f, --file <file>`         | Path to the tasks file                                                                       | `.taskmaster/tasks/tasks.json`          |
+| `--tag <tag>`               | Specify tag context for task operations                                                      |                                         |
 
-  <Accordion title="Analyze Task Complexity">
-    ```bash
-    # Analyze complexity of all tasks
-    task-master analyze-complexity
+**Examples**
+```bash
+task-master set-status --id=1 --status=done
+task-master set-status --id=1,2,3 --status=in-progress
+task-master set-status --id=1.1,1.2 --status=done --tag=frontend
+```
 
-    # Save report to a custom location
-    task-master analyze-complexity --output=my-report.json
+> **Note:**
+> - When marking a task as "done", all of its subtasks will automatically be marked as "done" as well.
 
-    # Use a specific LLM model
-    task-master analyze-complexity --model=claude-3-opus-20240229
+## task-master list
 
-    # Set a custom complexity threshold (1-10)
-    task-master analyze-complexity --threshold=6
+Lists all tasks, with options to filter by status, show subtasks, or use a specific complexity report.
 
-    # Use an alternative tasks file
-    task-master analyze-complexity --file=custom-tasks.json
+**Usage**
+```bash
+task-master list [options]
+```
 
-    # Use Perplexity AI for research-backed complexity analysis
-    task-master analyze-complexity --research
-    ```
-  </Accordion>
+**Flags**
+| Flag                        | Description                                                                                  | Default                                 |
+|-----------------------------|----------------------------------------------------------------------------------------------|-----------------------------------------|
+| `-f, --file <file>`         | Path to the tasks file                                                                       | `.taskmaster/tasks/tasks.json`          |
+| `-r, --report <report>`     | Path to the complexity report file                                                           | `.taskmaster/complexity-report.json`    |
+| `-s, --status <status>`     | Filter by status                                                                             |                                         |
+| `--with-subtasks`           | Show subtasks for each task                                                                  |                                         |
+| `--tag <tag>`               | Specify tag context for task operations                                                      |                                         |
 
-  <Accordion title="View Complexity Report">
-    ```bash
-    # Display the task complexity analysis report
-    task-master complexity-report
+**Examples**
+```bash
+task-master list
+task-master list --status=pending
+task-master list --with-subtasks
+task-master list --status=done --with-subtasks --tag=frontend
+```
 
-    # View a report at a custom location
-    task-master complexity-report --file=my-report.json
-    ```
-  </Accordion>
+> **Note:**
+> - Use `--with-subtasks` to include subtasks in the listing.
 
-  <Accordion title="Managing Task Dependencies">
-    ```bash
-    # Add a dependency to a task
-    task-master add-dependency --id=<id> --depends-on=<id>
+## task-master expand
 
-    # Remove a dependency from a task
-    task-master remove-dependency --id=<id> --depends-on=<id>
+Expands a task into subtasks using AI, or expands all pending tasks based on complexity analysis.
 
-    # Validate dependencies without fixing them
-    task-master validate-dependencies
+**Usage**
+```bash
+task-master expand --id=<id> [options]
+task-master expand --all [options]
+```
 
-    # Find and fix invalid dependencies automatically
-    task-master fix-dependencies
-    ```
-  </Accordion>
+**Flags**
+| Flag                        | Description                                                                                  | Default                                 |
+|-----------------------------|----------------------------------------------------------------------------------------------|-----------------------------------------|
+| `-i, --id <id>`             | ID of the task to expand                                                                     |                                         |
+| `-a, --all`                 | Expand all pending tasks based on complexity analysis                                        |                                         |
+| `-n, --num <number>`        | Number of subtasks to generate                                                               |                                         |
+| `-r, --research`            | Enable research-backed generation (e.g., using Perplexity)                                  | false                                   |
+| `-p, --prompt <text>`       | Additional context for subtask generation                                                    |                                         |
+| `-f, --force`               | Force expansion even if subtasks exist                                                       | false                                   |
+| `--file <file>`             | Path to the tasks file (relative to project root)                                            | `.taskmaster/tasks/tasks.json`          |
+| `-cr, --complexity-report <file>` | Path to the report file                                                             | `.taskmaster/complexity-report.json`    |
+| `--tag <tag>`               | Specify tag context for task operations                                                      |                                         |
 
-  <Accordion title="Add a New Task">
-    ```bash
-    # Add a new task using AI
-    task-master add-task --prompt="Description of the new task"
+**Examples**
+```bash
+task-master expand --id=5
+task-master expand --all
+task-master expand --id=3 --num=4 --prompt="Add more frontend details"
+task-master expand --all --research --force --tag=frontend
+```
 
-    # Add a task with dependencies
-    task-master add-task --prompt="Description" --dependencies=1,2,3
+> **Note:**
+> - Use `--all` to expand all pending tasks.
+> - Use `--force` to regenerate subtasks even if they already exist.
 
-    # Add a task with priority
-    task-master add-task --prompt="Description" --priority=high
-    ```
-  </Accordion>
+## task-master analyze-complexity
 
-  <Accordion title="Initialize a Project">
-    ```bash
-    # Initialize a new project with Task Master structure
-    task-master init
-    ```
-  </Accordion>
-</AccordionGroup>
+Analyzes tasks and generates expansion recommendations, optionally using research-backed analysis.
+
+**Usage**
+```bash
+task-master analyze-complexity [options]
+```
+
+**Flags**
+| Flag                        | Description                                                                                  | Default                                 |
+|-----------------------------|----------------------------------------------------------------------------------------------|-----------------------------------------|
+| `-o, --output <file>`       | Output file path for the report                                                              |                                         |
+| `-m, --model <model>`       | LLM model to use for analysis (defaults to configured model)                                 |                                         |
+| `-t, --threshold <number>`  | Minimum complexity score to recommend expansion (1-10)                                       | 5                                       |
+| `-f, --file <file>`         | Path to the tasks file                                                                       | `.taskmaster/tasks/tasks.json`          |
+| `-r, --research`            | Use Perplexity AI for research-backed complexity analysis                                    |                                         |
+| `-i, --id <ids>`            | Comma-separated list of specific task IDs to analyze                                         |                                         |
+| `--from <id>`               | Starting task ID in a range to analyze                                                       |                                         |
+| `--to <id>`                 | Ending task ID in a range to analyze                                                         |                                         |
+| `--tag <tag>`               | Specify tag context for task operations                                                      |                                         |
+
+**Examples**
+```bash
+task-master analyze-complexity --output=my-report.json
+task-master analyze-complexity --model=claude-3-opus-20240229
+task-master analyze-complexity --threshold=6 --file=custom-tasks.json
+task-master analyze-complexity --research --tag=frontend
+```
+
+> **Note:**
+> - The output report can be saved to a custom location with `--output`.
+> - Use `--research` for research-backed complexity analysis.
+
+## task-master research
+
+Performs AI-powered research queries with project context, optionally saving results to tasks or files.
+
+**Usage**
+```bash
+task-master research "<prompt>" [options]
+```
+
+**Flags**
+| Flag                        | Description                                                                                  | Default                                 |
+|-----------------------------|----------------------------------------------------------------------------------------------|-----------------------------------------|
+| `--file <file>`             | Path to the tasks file                                                                       |                                         |
+| `-i, --id <ids>`            | Comma-separated task/subtask IDs to include as context (e.g., "15,16.2")                   |                                         |
+| `-f, --files <paths>`       | Comma-separated file paths to include as context                                             |                                         |
+| `-c, --context <text>`      | Additional custom context to include in the research prompt                                  |                                         |
+| `-t, --tree`                | Include project file tree structure in the research context                                  |                                         |
+| `-s, --save <file>`         | Save research results to the specified task/subtask(s)                                       |                                         |
+| `-d, --detail <level>`      | Output detail level: low, medium, high                                                       | medium                                  |
+| `--save-to <id>`            | Automatically save research results to specified task/subtask ID (e.g., "15" or "15.2")   |                                         |
+| `--save-file`               | Save research results to .taskmaster/docs/research/ directory                                |                                         |
+| `--tag <tag>`               | Specify tag context for task operations                                                      |                                         |
+
+**Examples**
+```bash
+task-master research "How should I implement user authentication?"
+task-master research "What's the best approach?" --id=15,23.2
+task-master research "How does auth work?" --files=src/auth.js --tree
+task-master research "Implementation steps?" --save-to=15.2 --detail=high --tag=frontend
+```
+
+> **Note:**
+> - The prompt is required.
+> - Use `--save-to` or `--save-file` to save results to tasks or files.
+
+## task-master clear-subtasks
+
+Clears subtasks from specified tasks, or from all tasks if `--all` is used.
+
+**Usage**
+```bash
+task-master clear-subtasks --id=<ids> [options]
+task-master clear-subtasks --all [options]
+```
+
+**Flags**
+| Flag                        | Description                                                                                  | Default                                 |
+|-----------------------------|----------------------------------------------------------------------------------------------|-----------------------------------------|
+| `-f, --file <file>`         | Path to the tasks file                                                                       | `.taskmaster/tasks/tasks.json`          |
+| `-i, --id <ids>`            | Task IDs (comma-separated) to clear subtasks from                                            |                                         |
+| `--all`                     | Clear subtasks from all tasks                                                                |                                         |
+| `--tag <tag>`               | Specify tag context for task operations                                                      |                                         |
+
+**Examples**
+```bash
+task-master clear-subtasks --id=5,6,7
+task-master clear-subtasks --all
+task-master clear-subtasks --id=1 --tag=frontend
+```
+
+> **Note:**
+> - You must specify either `--id` or `--all`.
+
+## task-master add-task
+
+Adds a new task using AI, or manually by providing a title and description.
+
+**Usage**
+```bash
+task-master add-task --prompt="<description>" [options]
+task-master add-task --title="<title>" --description="<desc>" [options]
+```
+
+**Flags**
+| Flag                        | Description                                                                                  | Default                                 |
+|-----------------------------|----------------------------------------------------------------------------------------------|-----------------------------------------|
+| `-f, --file <file>`         | Path to the tasks file                                                                       | `.taskmaster/tasks/tasks.json`          |
+| `-p, --prompt <prompt>`     | Description of the task to add (required if not using manual fields)                         |                                         |
+| `-t, --title <title>`       | Task title (for manual task creation)                                                        |                                         |
+| `-d, --description <desc>`  | Task description (for manual task creation)                                                  |                                         |
+| `--details <details>`       | Implementation details (for manual task creation)                                            |                                         |
+| `--dependencies <ids>`      | Comma-separated list of task IDs this task depends on                                        |                                         |
+| `--priority <priority>`     | Task priority (high, medium, low)                                                            | medium                                  |
+| `-r, --research`            | Whether to use research capabilities for task creation                                       |                                         |
+| `--tag <tag>`               | Specify tag context for task operations                                                      |                                         |
+
+**Examples**
+```bash
+task-master add-task --prompt="Implement login page"
+task-master add-task --title="Login" --description="Create login UI"
+task-master add-task --prompt="Add payment integration" --dependencies=1,2 --priority=high
+task-master add-task --prompt="Research new API" --research --tag=frontend
+```
+
+> **Note:**
+> - Either `--prompt` or both `--title` and `--description` must be provided.
+
+## task-master next
+
+Shows the next task to work on based on dependencies and status.
+
+**Usage**
+```bash
+task-master next [options]
+```
+
+**Flags**
+| Flag                        | Description                                                                                  | Default                                 |
+|-----------------------------|----------------------------------------------------------------------------------------------|-----------------------------------------|
+| `-f, --file <file>`         | Path to the tasks file                                                                       | `.taskmaster/tasks/tasks.json`          |
+| `-r, --report <report>`     | Path to the complexity report file                                                           | `.taskmaster/complexity-report.json`    |
+| `--tag <tag>`               | Specify tag context for task operations                                                      |                                         |
+
+**Examples**
+```bash
+task-master next
+task-master next --tag=frontend
+task-master next --report=custom-report.json
+```
+
+> **Note:**
+> - The next task is determined based on dependencies and current status.
+
+## task-master show
+
+Displays detailed information about one or more tasks. Accepts a single ID or a comma-separated list.
+
+**Usage**
+```bash
+task-master show <id> [options]
+task-master show --id=<id> [options]
+```
+
+**Flags**
+| Flag                        | Description                                                                                  | Default                                 |
+|-----------------------------|----------------------------------------------------------------------------------------------|-----------------------------------------|
+| `[id]`                      | Task ID(s) to show (comma-separated for multiple)                                            |                                         |
+| `-i, --id <id>`             | Task ID(s) to show (comma-separated for multiple)                                            |                                         |
+| `-s, --status <status>`     | Filter subtasks by status                                                                    |                                         |
+| `-f, --file <file>`         | Path to the tasks file                                                                       | `.taskmaster/tasks/tasks.json`          |
+| `-r, --report <report>`     | Path to the complexity report file                                                           | `.taskmaster/complexity-report.json`    |
+| `--tag <tag>`               | Specify tag context for task operations                                                      |                                         |
+
+**Examples**
+```bash
+task-master show 1
+task-master show --id=2,3
+task-master show 1.2 --status=pending --tag=frontend
+```
+
+> **Note:**
+> - You can show multiple tasks by providing a comma-separated list of IDs.
+
+## task-master add-dependency
+
+Adds a dependency to a task.
+
+**Usage**
+```bash
+task-master add-dependency --id=<id> --depends-on=<id> [options]
+```
+
+**Flags**
+| Flag                        | Description                                                                                  | Default                                 |
+|-----------------------------|----------------------------------------------------------------------------------------------|-----------------------------------------|
+| `-i, --id <id>`             | Task ID to add dependency to                                                                 |                                         |
+| `-d, --depends-on <id>`     | Task ID that will become a dependency                                                        |                                         |
+| `-f, --file <file>`         | Path to the tasks file                                                                       | `.taskmaster/tasks/tasks.json`          |
+| `--tag <tag>`               | Specify tag context for task operations                                                      |                                         |
+
+**Examples**
+```bash
+task-master add-dependency --id=5 --depends-on=2
+task-master add-dependency --id=1.2 --depends-on=3.1 --tag=frontend
+```
+
+> **Note:**
+> - Both `--id` and `--depends-on` are required.
+
+## task-master remove-dependency
+
+Removes a dependency from a task.
+
+**Usage**
+```bash
+task-master remove-dependency --id=<id> --depends-on=<id> [options]
+```
+
+**Flags**
+| Flag                        | Description                                                                                  | Default                                 |
+|-----------------------------|----------------------------------------------------------------------------------------------|-----------------------------------------|
+| `-i, --id <id>`             | Task ID to remove dependency from                                                            |                                         |
+| `-d, --depends-on <id>`     | Task ID to remove as a dependency                                                            |                                         |
+| `-f, --file <file>`         | Path to the tasks file                                                                       | `.taskmaster/tasks/tasks.json`          |
+| `--tag <tag>`               | Specify tag context for task operations                                                      |                                         |
+
+**Examples**
+```bash
+task-master remove-dependency --id=5 --depends-on=2
+task-master remove-dependency --id=1.2 --depends-on=3.1 --tag=frontend
+```
+
+> **Note:**
+> - Both `--id` and `--depends-on` are required.
+
+## task-master validate-dependencies
+
+Identifies invalid dependencies in your tasks file without fixing them.
+
+**Usage**
+```bash
+task-master validate-dependencies [options]
+```
+
+**Flags**
+| Flag                        | Description                                                                                  | Default                                 |
+|-----------------------------|----------------------------------------------------------------------------------------------|-----------------------------------------|
+| `-f, --file <file>`         | Path to the tasks file                                                                       | `.taskmaster/tasks/tasks.json`          |
+| `--tag <tag>`               | Specify tag context for task operations                                                      |                                         |
+
+**Examples**
+```bash
+task-master validate-dependencies
+task-master validate-dependencies --file=custom-tasks.json --tag=frontend
+```
+
+> **Note:**
+> - This command only reports invalid dependencies; use `fix-dependencies` to fix them.
+
+## task-master fix-dependencies
+
+Fixes invalid dependencies in your tasks file automatically.
+
+**Usage**
+```bash
+task-master fix-dependencies [options]
+```
+
+**Flags**
+| Flag                        | Description                                                                                  | Default                                 |
+|-----------------------------|----------------------------------------------------------------------------------------------|-----------------------------------------|
+| `-f, --file <file>`         | Path to the tasks file                                                                       | `.taskmaster/tasks/tasks.json`          |
+| `--tag <tag>`               | Specify tag context for task operations                                                      |                                         |
+
+**Examples**
+```bash
+task-master fix-dependencies
+task-master fix-dependencies --file=custom-tasks.json --tag=frontend
+```
+
+> **Note:**
+> - This command will attempt to fix all invalid dependencies found.
+
+## task-master complexity-report
+
+Displays the complexity analysis report for your tasks.
+
+**Usage**
+```bash
+task-master complexity-report [options]
+```
+
+**Flags**
+| Flag                        | Description                                                                                  | Default                                 |
+|-----------------------------|----------------------------------------------------------------------------------------------|-----------------------------------------|
+| `-f, --file <file>`         | Path to the report file                                                                      | `.taskmaster/complexity-report.json`    |
+| `--tag <tag>`               | Specify tag context for task operations                                                      |                                         |
+
+**Examples**
+```bash
+task-master complexity-report
+task-master complexity-report --file=my-report.json --tag=frontend
+```
+
+> **Note:**
+> - Use this command to view the results of `analyze-complexity`.
+
+## task-master add-subtask
+
+Adds a subtask to an existing task, or converts an existing task to a subtask.
+
+**Usage**
+```bash
+task-master add-subtask --parent=<id> [options]
+```
+
+**Flags**
+| Flag                        | Description                                                                                  | Default                                 |
+|-----------------------------|----------------------------------------------------------------------------------------------|-----------------------------------------|
+| `-f, --file <file>`         | Path to the tasks file                                                                       | `.taskmaster/tasks/tasks.json`          |
+| `-p, --parent <id>`         | Parent task ID (required)                                                                    |                                         |
+| `-i, --task-id <id>`        | Existing task ID to convert to subtask                                                       |                                         |
+| `-t, --title <title>`       | Title for the new subtask (when creating a new subtask)                                      |                                         |
+| `-d, --description <text>`  | Description for the new subtask                                                              |                                         |
+| `--details <text>`          | Implementation details for the new subtask                                                   |                                         |
+| `--dependencies <ids>`      | Comma-separated list of dependency IDs for the new subtask                                   |                                         |
+| `-s, --status <status>`     | Status for the new subtask                                                                   | pending                                 |
+| `--skip-generate`           | Skip regenerating task files                                                                 |                                         |
+| `--tag <tag>`               | Specify tag context for task operations                                                      |                                         |
+
+**Examples**
+```bash
+task-master add-subtask --parent=5 --task-id=8
+task-master add-subtask -p 5 -t "Implement login UI" -d "Create the login form"
+task-master add-subtask --parent=2 --title="Write docs" --status=in-progress --tag=frontend
+```
+
+> **Note:**
+> - Either `--task-id` or `--title` must be provided.
+> - The parent task ID is required.
+
+## task-master remove-subtask
+
+Removes a subtask from its parent task, or converts it to a standalone task.
+
+**Usage**
+```bash
+task-master remove-subtask --id=<parentId.subtaskId> [options]
+```
+
+**Flags**
+| Flag                        | Description                                                                                  | Default                                 |
+|-----------------------------|----------------------------------------------------------------------------------------------|-----------------------------------------|
+| `-f, --file <file>`         | Path to the tasks file                                                                       | `.taskmaster/tasks/tasks.json`          |
+| `-i, --id <id>`             | Subtask ID(s) to remove in format "parentId.subtaskId" (can be comma-separated)             |                                         |
+| `-c, --convert`             | Convert the subtask to a standalone task instead of deleting it                              |                                         |
+| `--skip-generate`           | Skip regenerating task files                                                                 |                                         |
+| `--tag <tag>`               | Specify tag context for task operations                                                      |                                         |
+
+**Examples**
+```bash
+task-master remove-subtask --id=5.2
+task-master remove-subtask --id=5.2,6.3,7.1
+task-master remove-subtask --id=5.2 --convert --tag=frontend
+```
+
+> **Note:**
+> - The `--id` flag is required and must be in the format `parentId.subtaskId`.
+> - Use `--convert` to turn a subtask into a standalone task instead of deleting it.
+
+## task-master remove-task
+
+Removes one or more tasks or subtasks permanently. Accepts a single ID or a comma-separated list.
+
+**Usage**
+```bash
+task-master remove-task --id=<ids> [options]
+```
+
+**Flags**
+| Flag                        | Description                                                                                  | Default                                 |
+|-----------------------------|----------------------------------------------------------------------------------------------|-----------------------------------------|
+| `-i, --id <ids>`            | ID(s) of the task(s) or subtask(s) to remove (e.g., "5", "5.2", or "5,6.1,7")         |                                         |
+| `-f, --file <file>`         | Path to the tasks file                                                                       | `.taskmaster/tasks/tasks.json`          |
+| `-y, --yes`                 | Skip confirmation prompt                                                                     | false                                   |
+| `--tag <tag>`               | Specify tag context for task operations                                                      |                                         |
+
+**Examples**
+```bash
+task-master remove-task --id=5
+task-master remove-task --id=5.2,6.1,7 --yes
+task-master remove-task --id=1,2 --tag=frontend
+```
+
+> **Note:**
+> - This command will also remove all subtasks and dependencies associated with the selected tasks.
+
+## task-master init
+
+Initializes a new project with Task Master structure.
+
+**Usage**
+```bash
+task-master init [options]
+```
+
+**Flags**
+| Flag                        | Description                                                                                  | Default                                 |
+|-----------------------------|----------------------------------------------------------------------------------------------|-----------------------------------------|
+| `-y, --yes`                 | Skip prompts and use default values                                                          |                                         |
+| `-n, --name <name>`         | Project name                                                                                |                                         |
+| `-d, --description <description>` | Project description                                                                |                                         |
+| `-v, --version <version>`   | Project version                                                                             | 0.1.0                                   |
+| `-a, --author <author>`     | Author name                                                                                 |                                         |
+| `-r, --rules <rules...>`    | List of rules to add (roo, windsurf, cursor, ...)                                           |                                         |
+| `--skip-install`            | Skip installing dependencies                                                                |                                         |
+| `--dry-run`                 | Show what would be done without making changes                                              |                                         |
+| `--aliases`                 | Add shell aliases (tm, taskmaster)                                                          |                                         |
+| `--no-aliases`              | Skip shell aliases (tm, taskmaster)                                                         |                                         |
+| `--git`                     | Initialize Git repository                                                                   |                                         |
+| `--no-git`                  | Skip Git repository initialization                                                          |                                         |
+| `--git-tasks`               | Store tasks in Git                                                                          |                                         |
+| `--no-git-tasks`            | No Git storage of tasks                                                                     |                                         |
+
+**Examples**
+```bash
+task-master init --name="My Project" --author="Jane Doe"
+task-master init --yes --skip-install
+```
+
+> **Note:**
+> - This command sets up the initial project structure and configuration.
+
+## task-master models
+
+Manages AI model configurations for task generation, research, and fallback.
+
+**Usage**
+```bash
+task-master models [options]
+```
+
+**Flags**
+| Flag                        | Description                                                                                  | Default                                 |
+|-----------------------------|----------------------------------------------------------------------------------------------|-----------------------------------------|
+| `--set-main <model_id>`     | Set the primary model for task generation/updates                                            |                                         |
+| `--set-research <model_id>` | Set the model for research-backed operations                                                 |                                         |
+| `--set-fallback <model_id>` | Set the model to use if the primary fails                                                    |                                         |
+| `--setup`                   | Run interactive setup to configure models                                                    |                                         |
+| `--openrouter`              | Allow setting a custom OpenRouter model ID (use with --set-*)                               |                                         |
+| `--ollama`                  | Allow setting a custom Ollama model ID (use with --set-*)                                   |                                         |
+| `--bedrock`                 | Allow setting a custom Bedrock model ID (use with --set-*)                                  |                                         |
+| `--claude-code`             | Allow setting a Claude Code model ID (use with --set-*)                                     |                                         |
+| `--azure`                   | Allow setting a custom Azure OpenAI model ID (use with --set-*)                             |                                         |
+| `--vertex`                  | Allow setting a custom Vertex AI model ID (use with --set-*)                                |                                         |
+| `--gemini-cli`              | Allow setting a Gemini CLI model ID (use with --set-*)                                      |                                         |
+
+**Examples**
+```bash
+task-master models
+task-master models --set-main gpt-4o
+task-master models --set-research sonar-pro
+task-master models --set-fallback claude-3-5-sonnet-20241022
+task-master models --set-main my-custom-model --ollama
+task-master models --setup
+```
+
+> **Note:**
+> - Use `--setup` for interactive configuration.
+> - Only one provider flag (e.g., --openrouter, --ollama) can be used at a time.
+
+## task-master lang
+
+Manages response language settings for Task Master.
+
+**Usage**
+```bash
+task-master lang [options]
+```
+
+**Flags**
+| Flag                        | Description                                                                                  | Default                                 |
+|-----------------------------|----------------------------------------------------------------------------------------------|-----------------------------------------|
+| `--response <response_language>` | Set the response language                                                            | English                                 |
+| `--setup`                   | Run interactive setup to configure response language                                        |                                         |
+
+**Examples**
+```bash
+task-master lang --response=Spanish
+task-master lang --setup
+```
+
+> **Note:**
+> - Use `--setup` for an interactive prompt to set the language.
+
+## task-master move
+
+Moves a task or subtask to a new position.
+
+**Usage**
+```bash
+task-master move --from=<id> --to=<id> [options]
+```
+
+**Flags**
+| Flag                        | Description                                                                                  | Default                                 |
+|-----------------------------|----------------------------------------------------------------------------------------------|-----------------------------------------|
+| `-f, --file <file>`         | Path to the tasks file                                                                       | `.taskmaster/tasks/tasks.json`          |
+| `--from <id>`               | ID of the task/subtask to move (can be comma-separated for multiple)                         |                                         |
+| `--to <id>`                 | ID of the destination (must match the number of source IDs if comma-separated)               |                                         |
+| `--tag <tag>`               | Specify tag context for task operations                                                      |                                         |
+
+**Examples**
+```bash
+task-master move --from=5 --to=10
+task-master move --from=5,6,7 --to=10,11,12
+task-master move --from=1.2 --to=3.1 --tag=frontend
+```
+
+> **Note:**
+> - The number of source and destination IDs must match when moving multiple tasks.
+
+## task-master rules
+
+Adds or removes rules for one or more profiles, or runs an interactive setup to select rule profiles to add.
+
+**Usage**
+```bash
+task-master rules <add|remove> <profile1> [profile2 ...] [options]
+task-master rules --setup
+```
+
+**Flags**
+| Flag                | Description                                                      | Default |
+|---------------------|------------------------------------------------------------------|---------|
+| `-f, --force`       | Skip confirmation prompt when removing rules (dangerous)          |         |
+| `--setup`           | Run interactive setup to select rule profiles to add              |         |
+
+**Examples**
+```bash
+task-master rules add windsurf roo
+# Remove a rule profile
+task-master rules remove windsurf
+# Interactive setup
+task-master rules --setup
+```
+
+> **Note:**
+> - Valid actions are `add` and `remove`.
+> - Profiles are space- or comma-separated (e.g., `windsurf,roo`).
+> - Use `--setup` for an interactive prompt to select rule profiles.
+
+## task-master migrate
+
+Migrates an existing project to use the new `.taskmaster` directory structure.
+
+**Usage**
+```bash
+task-master migrate [options]
+```
+
+**Flags**
+| Flag                | Description                                                      | Default |
+|---------------------|------------------------------------------------------------------|---------|
+| `-f, --force`       | Force migration even if .taskmaster directory already exists      |         |
+| `--backup`          | Create backup of old files before migration                      | false   |
+| `--cleanup`         | Remove old files after successful migration                      | true    |
+| `-y, --yes`         | Skip confirmation prompts                                        |         |
+| `--dry-run`         | Show what would be migrated without actually moving files        |         |
+
+**Examples**
+```bash
+task-master migrate
+# Force migration and skip prompts
+task-master migrate --force --yes
+# Dry run to preview changes
+task-master migrate --dry-run
+```
+
+> **Note:**
+> - Use `--backup` to keep a copy of your old files.
+> - Use `--cleanup` to remove old files after migration (default: true).
+
+## task-master sync-readme
+
+Syncs the current task list to `README.md` in the project root.
+
+**Usage**
+```bash
+task-master sync-readme [options]
+```
+
+**Flags**
+| Flag                | Description                                                      | Default                                 |
+|---------------------|------------------------------------------------------------------|-----------------------------------------|
+| `-f, --file <file>` | Path to the tasks file                                           | `.taskmaster/tasks/tasks.json`          |
+| `--with-subtasks`   | Include subtasks in the README output                            |                                         |
+| `-s, --status <status>` | Show only tasks matching this status (e.g., pending, done)   |                                         |
+| `-t, --tag <tag>`   | Tag to use for the task list (default: master)                   |                                         |
+
+**Examples**
+```bash
+task-master sync-readme
+# Include subtasks
+task-master sync-readme --with-subtasks
+# Only show pending tasks for a tag
+task-master sync-readme --status=pending --tag=frontend
+```
+
+> **Note:**
+> - This command updates your README.md with the current task list.
+
+## task-master add-tag
+
+Creates a new tag context for organizing tasks. You can copy tasks from the current tag, another tag, or create a tag from the current git branch.
+
+**Usage**
+```bash
+task-master add-tag <tagName> [options]
+task-master add-tag --from-branch [options]
+```
+
+**Flags**
+| Flag                        | Description                                                      | Default                                 |
+|-----------------------------|------------------------------------------------------------------|-----------------------------------------|
+| `-f, --file <file>`         | Path to the tasks file                                           | `.taskmaster/tasks/tasks.json`          |
+| `--copy-from-current`       | Copy tasks from the current tag to the new tag                   |                                         |
+| `--copy-from <tag>`         | Copy tasks from the specified tag to the new tag                 |                                         |
+| `--from-branch`             | Create tag name from current git branch (ignores tagName)        |                                         |
+| `-d, --description <text>`  | Optional description for the tag                                 |                                         |
+
+**Examples**
+```bash
+task-master add-tag feature-xyz
+# Copy from current tag
+task-master add-tag feature-xyz --copy-from-current
+# Copy from another tag
+task-master add-tag feature-xyz --copy-from master
+# Create tag from git branch
+task-master add-tag --from-branch
+```
+
+> **Note:**
+> - Either `tagName` or `--from-branch` is required.
+> - Use `--copy-from-current` or `--copy-from` to duplicate tasks from another tag.
+
+## task-master delete-tag
+
+Deletes an existing tag and all its tasks.
+
+**Usage**
+```bash
+task-master delete-tag <tagName> [options]
+```
+
+**Flags**
+| Flag                        | Description                                                      | Default                                 |
+|-----------------------------|------------------------------------------------------------------|-----------------------------------------|
+| `-f, --file <file>`         | Path to the tasks file                                           | `.taskmaster/tasks/tasks.json`          |
+| `-y, --yes`                 | Skip confirmation prompts                                        |                                         |
+
+**Examples**
+```bash
+task-master delete-tag feature-xyz
+# Skip confirmation
+task-master delete-tag feature-xyz --yes
+```
+
+> **Note:**
+> - This command will permanently delete the tag and all its associated tasks.
+
+## task-master tags
+
+Lists all available tags with metadata.
+
+**Usage**
+```bash
+task-master tags [options]
+```
+
+**Flags**
+| Flag                        | Description                                                      | Default                                 |
+|-----------------------------|------------------------------------------------------------------|-----------------------------------------|
+| `-f, --file <file>`         | Path to the tasks file                                           | `.taskmaster/tasks/tasks.json`          |
+| `--show-metadata`           | Show detailed metadata for each tag                              |                                         |
+
+**Examples**
+```bash
+task-master tags
+task-master tags --show-metadata
+```
+
+> **Note:**
+> - Use `--show-metadata` to display additional information about each tag.
+
+## task-master use-tag
+
+Switches to a different tag context.
+
+**Usage**
+```bash
+task-master use-tag <tagName> [options]
+```
+
+**Flags**
+| Flag                        | Description                                                      | Default                                 |
+|-----------------------------|------------------------------------------------------------------|-----------------------------------------|
+| `-f, --file <file>`         | Path to the tasks file                                           | `.taskmaster/tasks/tasks.json`          |
+
+**Examples**
+```bash
+task-master use-tag feature-xyz
+task-master use-tag master
+```
+
+> **Note:**
+> - The tag must already exist. Use `tags` to list available tags.
+
+## task-master rename-tag
+
+Renames an existing tag.
+
+**Usage**
+```bash
+task-master rename-tag <oldName> <newName> [options]
+```
+
+**Flags**
+| Flag                        | Description                                                      | Default                                 |
+|-----------------------------|------------------------------------------------------------------|-----------------------------------------|
+| `-f, --file <file>`         | Path to the tasks file                                           | `.taskmaster/tasks/tasks.json`          |
+
+**Examples**
+```bash
+task-master rename-tag old-feature new-feature
+```
+
+> **Note:**
+> - The new tag name must not already exist.
+
+## task-master copy-tag
+
+Copies an existing tag to create a new tag with the same tasks.
+
+**Usage**
+```bash
+task-master copy-tag <sourceName> <targetName> [options]
+```
+
+**Flags**
+| Flag                        | Description                                                      | Default                                 |
+|-----------------------------|------------------------------------------------------------------|-----------------------------------------|
+| `-f, --file <file>`         | Path to the tasks file                                           | `.taskmaster/tasks/tasks.json`          |
+| `-d, --description <text>`  | Optional description for the new tag                             |                                         |
+
+**Examples**
+```bash
+task-master copy-tag feature-xyz feature-abc
+# Add a description
+task-master copy-tag feature-xyz feature-abc --description="For new release"
+```
+
+> **Note:**
+> - The target tag must not already exist.
+
