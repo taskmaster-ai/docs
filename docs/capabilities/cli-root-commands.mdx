@@ -11,7 +11,6 @@ sidebarTitle: "CLI Commands"
 | [update](#task-master-update) | Update multiple tasks with ID >= "from" |
 | [update-task](#task-master-update-task) | Update a single specific task by ID |
 | [update-subtask](#task-master-update-subtask) | Update a subtask by appending information |
-| [generate](#task-master-generate) | Generate task files from tasks.json |
 | [set-status](#task-master-set-status) | Set the status of a task |
 | [list](#task-master-list) | List all tasks |
 | [expand](#task-master-expand) | Expand a task into subtasks using AI |
@@ -168,31 +167,6 @@ task-master update-subtask --id=7.4 --prompt="Add frontend notes" --tag=frontend
 > **Note:**
 > - The `--id` and `--prompt` flags are required.
 > - The subtask ID must be in the format `parentId.subtaskId` (e.g., `5.2`).
-
-## task-master generate
-
-Generates individual task files from `tasks.json`.
-
-**Usage**
-```bash
-task-master generate [options]
-```
-
-**Flags**
-| Flag                        | Description                                                                                  | Default                                 |
-|-----------------------------|----------------------------------------------------------------------------------------------|-----------------------------------------|
-| `-f, --file <file>`         | Path to the tasks file                                                                       | `.taskmaster/tasks/tasks.json`          |
-| `-o, --output <dir>`        | Output directory                                                                             | `.taskmaster/tasks`                     |
-| `--tag <tag>`               | Specify tag context for task operations                                                      |                                         |
-
-**Examples**
-```bash
-task-master generate --file=custom-tasks.json --output=outdir
-task-master generate --tag=frontend
-```
-
-> **Note:**
-> - This command generates one file per task in the specified output directory.
 
 ## task-master set-status
 
